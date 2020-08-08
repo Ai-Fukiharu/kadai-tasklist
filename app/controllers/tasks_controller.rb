@@ -17,22 +17,26 @@ class TasksController < ApplicationController
   def create
     @task = current_user.tasks.build(task_params)
     if @task.save
-      flash[:success] = 'メッセージを投稿しました。'
+      flash[:success] = 'Taskを追加しました。'
       redirect_to root_url
     else
       @tasks = current_user.tasks.order(id: :desc).page(params[:page])
-      flash.now[:danger] = 'メッセージの投稿に失敗しました。'
-      render root_url
+      flash.now[:danger] = 'Taskの追加に失敗しました。'
+      render :new
     end
   end
 
   def edit
+    unless @task.user_id == @current_user.id
+      flash[:danger] = "権限がありません"
+      redirect_to root_url
+    end
   end
 
   def update
     
     
-    if @task.update(task_params)
+    if @task.user_id==current_user.id && @task.update(task_params)
       flash[:success] = "Taskは正常に更新されました"
       redirect_to @task
     else
@@ -61,7 +65,7 @@ class TasksController < ApplicationController
   end
   
   def correct_user
-    @task = current_user.tasks.find_by(id: params[:id])
+    @task = @current_user.tasks.find_by(id: params[:id])
     unless @task
       redirect_to root_url
     end
