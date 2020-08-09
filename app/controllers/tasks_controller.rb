@@ -1,13 +1,19 @@
 class TasksController < ApplicationController
-  before_action :set_task, only: [:show, :edit, :update, :destroy]
+  before_action :set_task, only: [:show, :edit, :update]
   before_action :require_user_logged_in
+  before_action :correct_user, only: [:destroy]
   
   def index
-    @tasks = Task.all
+    if logged_in?
+      @tasks = current_user.tasks.order(id: :desc).page(params[:page])
+    end
   end
 
   def show
-    
+    unless @task.user_id == @current_user.id
+      flash[:danger] = "権限がありません"
+      redirect_to root_url
+    end 
   end
 
   def new
@@ -34,9 +40,8 @@ class TasksController < ApplicationController
   end
 
   def update
-    
-    
-    if @task.user_id==current_user.id && @task.update(task_params)
+    if @task.user_id==current_user.id 
+      @task.update(task_params)
       flash[:success] = "Taskは正常に更新されました"
       redirect_to @task
     else
@@ -46,11 +51,9 @@ class TasksController < ApplicationController
   end
 
   def destroy
-    
-    @task.destroy
-    
-    flash[:success] = "Taskは正常に削除されました"
-    redirect_to tasks_url
+      @task.destroy
+      flash[:success] = "Taskは正常に削除されました"
+      redirect_back(fallback_location: root_path)
   end
   
   private
@@ -65,7 +68,7 @@ class TasksController < ApplicationController
   end
   
   def correct_user
-    @task = @current_user.tasks.find_by(id: params[:id])
+    @task = current_user.tasks.find_by(id: params[:id])
     unless @task
       redirect_to root_url
     end
